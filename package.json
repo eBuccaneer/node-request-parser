@@ -1,0 +1,35 @@
+{
+  "name": "node-request-parser",
+  "version": "1.0.0",
+  "description": "Parser for request object",
+  "main": "node-request-parser.js",
+  "scripts": {
+    "test": "mocha tests/ --reporter spec",
+    "check": "jshint node-request-parser.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eBuccaneer/node-request-parser.git"
+  },
+  "keywords": [
+    "request",
+    "parser"
+  ],
+  "author": "eBuccaneer",
+  "license": "MIT",
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+    "lodash.foreach": "^4.5.0",
+    "lodash.isarray": "^4.0.0",
+    "lodash.isfunction": "^3.0.8"
+  },
+  "devDependencies": {
+    "chai": "4.1.2",
+    "jshint": "2.9.5",
+    "mocha": "3.5.3",
+    "node-mocks-http": "^1.6.6",
+    "sanitizer": "^0.1.3"
+  }
+}
