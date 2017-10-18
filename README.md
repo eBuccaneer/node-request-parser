@@ -6,7 +6,7 @@
 ## Usage
 `var RequestParser = require('node-request-parser')`
 
-'var parser = new RequestParser(options);`
+`var parser = new RequestParser(options);`
 
 (to be continued)
 
