@@ -1,12 +1,13 @@
 var _isFunction = require('lodash.isfunction'),
     _isArray = require('lodash.isarray'),
     _forEach = require('lodash.foreach'),
+    regex = /^(^[ABHPQ])([*]?)([A-Za-z0-9_-]{0,100})([?]?)$/,
+    srcTypes = {BODY: 0, HEADERS: 1, PARAMS: 2, QUERY: 3, AUTH: 4},
     sanitize,
     alwaysParse,
     authFunction,
     excludeSanitizeTypes,
-    regex = /^(^[ABHPQ])([*]?)([A-Za-z0-9_-]{0,100})([?]?)$/,
-    srcTypes = { BODY: 0, HEADERS: 1, PARAMS: 2, QUERY: 3, AUTH: 4 };
+    disableRegex;
 
 /**
  * RequestParser object
@@ -34,13 +35,20 @@ function RequestParser(options) {
          * an array of strings, which js types to exclude from sanitizing generally
          */
         excludeSanitizeTypes = _isArray(options.excludeSanitizeTypes) ? options.excludeSanitizeTypes : ['boolean', 'number'];
+
+        /**
+         * disables regex check on input keys
+         */
+        disableRegex = !!options.disableRegex;
     } else {
         sanitize = undefined;
         alwaysParse = [];
         authFunction = undefined;
         excludeSanitizeTypes = ['boolean', 'number'];
+        disableRegex = false;
     }
 }
+
 
 /**
  * extract property from request
@@ -59,6 +67,7 @@ extract = function (src, key, sanitized, isOptional) {
     }
 };
 
+
 /**
  * check user input
  */
@@ -67,14 +76,17 @@ checkInput = function (req, neededData) {
     if (!req) return 'no_request_object';
     if (neededData.length <= 0 && alwaysParse.length <= 0) return 'neededData_size_zero';
     var regexError;
-    _forEach(neededData, function (key) {
-        if (key.match(regex) === null) {
-            regexError = 'regex_error_' + key;
-            return false;
-        }
-    });
+    if (!disableRegex) {
+        _forEach(neededData, function (key) {
+            if (key.match(regex) === null) {
+                regexError = 'regex_error_' + key;
+                return false;
+            }
+        });
+    }
     return regexError ? regexError : undefined;
 };
+
 
 /**
  * apply auth function
@@ -91,6 +103,32 @@ parseAuth = function (headers, authOptional, callback) {
     });
 };
 
+/**
+ * processes the parsing for related srcType
+ */
+processParsing = function (req, key, srcType, data, errors, sanitized, isOptional) {
+    switch (srcType) {
+        case srcTypes.BODY:
+            data.body[key] = extract(req.body, key, sanitized, isOptional);
+            if (data.body[key] === 'extract_error') errors.push('body_missing_' + key);
+            break;
+        case srcTypes.PARAMS:
+            data.params[key] = extract(req.params, key, sanitized, isOptional);
+            if (data.params[key] === 'extract_error') errors.push('params_missing_' + key);
+            break;
+        case srcTypes.HEADERS:
+            data.headers[key] = extract(req.headers, key, sanitized, isOptional);
+            if (data.headers[key] === 'extract_error') errors.push('headers_missing_' + key);
+            break;
+        case srcTypes.QUERY:
+            data.query[key] = extract(req.query, key, sanitized, isOptional);
+            if (data.query[key] === 'extract_error') errors.push('query_missing_' + key);
+            break;
+        default:
+            errors.push('incorrectKey_' + key);
+            break;
+    }
+};
 
 /**
  * the sync parsing method
@@ -101,7 +139,6 @@ RequestParser.prototype.parseSync = function (req, neededData) {
         if (inputError) return {error: inputError};
 
         var needed = alwaysParse.concat(neededData);
-
         var data = {
             body: {},
             params: {},
@@ -115,27 +152,27 @@ RequestParser.prototype.parseSync = function (req, neededData) {
 
         _forEach(needed, function (key) {
             var isOptional = false;
-            var body = false;
-            var params = false;
-            var headers = false;
-            var query = false;
             var sanitized = false;
+            var srcType;
 
-            if (key.startsWith('B')) {
-                body = true;
-            }
-            if (key.startsWith('P')) {
-                params = true;
-            }
-            if (key.startsWith('H')) {
-                headers = true;
-            }
-            if (key.startsWith('Q')) {
-                query = true;
-            }
-            if (key.startsWith('A')) {
-                error = 'sync_auth_not_possible';
-                return false;
+            switch (key.substring(0, 1)) {
+                case 'B':
+                    srcType = srcTypes.BODY;
+                    break;
+                case 'P':
+                    srcType = srcTypes.PARAMS;
+                    break;
+                case 'H':
+                    srcType = srcTypes.HEADERS;
+                    break;
+                case 'Q':
+                    srcType = srcTypes.QUERY;
+                    break;
+                case 'A':
+                    error = 'sync_auth_not_possible';
+                    return false;
+                default:
+                    errors.push('incorrectKey_' + key);
             }
 
             key = key.slice(1);
@@ -155,21 +192,7 @@ RequestParser.prototype.parseSync = function (req, neededData) {
                 key = key.slice(0, -1);
             }
 
-            if (body) {
-                data.body[key] = extract(req.body, key, sanitized, isOptional);
-                if (data.body[key] === 'extract_error') errors.push('body_missing_' + key);
-            } else if (params) {
-                data.params[key] = extract(req.params, key, sanitized, isOptional);
-                if (data.params[key] === 'extract_error') errors.push('params_missing_' + key);
-            } else if (headers) {
-                data.headers[key] = extract(req.headers, key, sanitized, isOptional);
-                if (data.headers[key] === 'extract_error') errors.push('headers_missing_' + key);
-            } else if (query) {
-                data.query[key] = extract(req.query, key, sanitized, isOptional);
-                if (data.query[key] === 'extract_error') errors.push('query_missing_' + key);
-            } else {
-                errors.push('incorrectKey_' + key);
-            }
+            processParsing(req, key, srcType, data, errors, sanitized, isOptional);
         });
 
         if (error) {
@@ -179,7 +202,6 @@ RequestParser.prototype.parseSync = function (req, neededData) {
         } else {
             return data;
         }
-
 
     } catch (err) {
         return err;
@@ -196,7 +218,6 @@ RequestParser.prototype.parse = function (req, neededData, callback) {
         if (inputError) return callback(inputError, null);
 
         var needed = alwaysParse.concat(neededData);
-
         var data = {
             body: {},
             params: {},
@@ -211,36 +232,35 @@ RequestParser.prototype.parse = function (req, neededData, callback) {
         var authorizationNeeded = false;
 
         _forEach(needed, function (key) {
-
             var isOptional = false;
-            var body = false;
-            var params = false;
-            var headers = false;
-            var query = false;
+            var srcType = false;
             var sanitized = false;
 
-            if (key.startsWith('B')) {
-                body = true;
-            }
-            if (key.startsWith('P')) {
-                params = true;
-            }
-            if (key.startsWith('H')) {
-                headers = true;
-            }
-            if (key.startsWith('Q')) {
-                query = true;
-            }
-            if (key.startsWith('A')) {
-                if (!authFunction) {
-                    error = 'authFunction_not_set';
-                    return false;
-                }
-                authorizationNeeded = true;
-                if (key.endsWith('?')) {
-                    authOptional = true;
-                }
-                return;
+            switch (key.substring(0, 1)) {
+                case 'B':
+                    srcType = srcTypes.BODY;
+                    break;
+                case 'P':
+                    srcType = srcTypes.PARAMS;
+                    break;
+                case 'H':
+                    srcType = srcTypes.HEADERS;
+                    break;
+                case 'Q':
+                    srcType = srcTypes.QUERY;
+                    break;
+                case 'A':
+                    if (!authFunction) {
+                        error = 'authFunction_not_set';
+                        return false;
+                    }
+                    authorizationNeeded = true;
+                    if (key.endsWith('?')) {
+                        authOptional = true;
+                    }
+                    return;
+                default:
+                    errors.push('incorrectKey_' + key);
             }
 
             key = key.slice(1);
@@ -260,25 +280,11 @@ RequestParser.prototype.parse = function (req, neededData, callback) {
                 key = key.slice(0, -1);
             }
 
-            if (body) {
-                data.body[key] = extract(req.body, key, sanitized, isOptional);
-                if (data.body[key] === 'extract_error') errors.push('body_missing_' + key);
-            } else if (params) {
-                data.params[key] = extract(req.params, key, sanitized, isOptional);
-                if (data.params[key] === 'extract_error') errors.push('params_missing_' + key);
-            } else if (headers) {
-                data.headers[key] = extract(req.headers, key, sanitized, isOptional);
-                if (data.headers[key] === 'extract_error') errors.push('headers_missing_' + key);
-            } else if (query) {
-                data.query[key] = extract(req.query, key, sanitized, isOptional);
-                if (data.query[key] === 'extract_error') errors.push('query_missing_' + key);
-            } else {
-                errors.push('incorrectKey_' + key);
-            }
+            processParsing(req, key, srcType, data, errors, sanitized, isOptional);
         });
 
         if (error) {
-            return callback(error, null);
+            return callback(error);
         } else if (errors.length > 0) {
             return callback('parser_error', errors);
         } else {

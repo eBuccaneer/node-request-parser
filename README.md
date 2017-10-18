@@ -1,12 +1,17 @@
 # node-request-parser
 
 ## Install
-(not yet possible) Use `npm install --save node-request-parser` to install and add to package.json
+(not yet possible) Use NPM to install node-request-parser and add dependency to package.json:
+```bash
+$ npm install --save node-request-parser
+```
 
 ## Usage
-`var RequestParser = require('node-request-parser')`
 
-`var parser = new RequestParser(options);`
+```js
+var RequestParser = require('node-request-parser');
+var parser = new RequestParser(options);
+```
 
 (to be continued)
 

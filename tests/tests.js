@@ -2,9 +2,9 @@ var expect = require('chai').expect,
     RequestParser = require('../node-request-parser'),
     httpMocks = require('node-mocks-http'),
     sanitizer = require('sanitizer'),
+    userMap = {'8439235fe34abc37c832fadd21': 'max', '8439235fe34abc37c832faddff': 'monika'},
     completeMock,
-    missingMock,
-    userMap = {'8439235fe34abc37c832fadd21': 'max', '8439235fe34abc37c832faddff': 'monika'};
+    missingMock;
 
 describe('request-parser tests', function() {
     before(function() {
@@ -200,7 +200,7 @@ describe('request-parser tests', function() {
             var parser = new RequestParser();
             parser.parse(missingMock, ['A'], function (err, data) {
                 expect(err.toString()).to.equal('authFunction_not_set');
-                expect(data).to.equal(null);
+                expect(data).to.equal(undefined);
             });
         });
 
@@ -208,7 +208,7 @@ describe('request-parser tests', function() {
             var parser = new RequestParser();
             parser.parse(missingMock, ['B*id'], function (err, data) {
                 expect(err.toString()).to.equal('sanitizeFunction_not_set');
-                expect(data).to.equal(null);
+                expect(data).to.equal(undefined);
             });
         });
 
@@ -244,6 +244,14 @@ describe('request-parser tests', function() {
             var parser = new RequestParser();
             parser.parse(missingMock, ['Bid_test#'], function (err, data) {
                 expect(err.toString()).to.equal('regex_error_Bid_test#');
+            });
+        });
+
+        it('parse -> should fail but correctly disable regex check', function () {
+            var parser = new RequestParser({disableRegex: true});
+            parser.parse(missingMock, ['Bid_test#'], function (err, data) {
+                expect(err.toString()).to.equal('parser_error');
+                expect(data.length).to.equal(1);
             });
         });
 
@@ -410,6 +418,13 @@ describe('request-parser tests', function() {
             var parser = new RequestParser();
             var data = parser.parseSync(missingMock, ['Bid_test#']);
             expect(data.error).to.equal('regex_error_Bid_test#');
+        });
+
+        it('parse -> should fail but correctly disable regex check', function () {
+            var parser = new RequestParser({disableRegex: true});
+            var data = parser.parseSync(missingMock, ['Bid_test#']);
+            expect(data.error).to.equal('parser_error');
+            expect(data.errors.length).to.equal(1);
         });
 
     });
