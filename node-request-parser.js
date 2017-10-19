@@ -78,7 +78,7 @@ checkInput = function (req, neededData) {
     var regexError;
     if (!disableRegex) {
         _forEach(neededData, function (key) {
-            if (key.match(regex) === null) {
+            if (key.match(regex) === null || typeof key !== 'string') {
                 regexError = 'regex_error_' + key;
                 return false;
             }
@@ -117,7 +117,7 @@ processParsing = function (req, key, srcType, data, errors, sanitized, isOptiona
             if (data.params[key] === 'extract_error') errors.push('params_missing_' + key);
             break;
         case srcTypes.HEADERS:
-            data.headers[key] = extract(req.headers, key, sanitized, isOptional);
+            data.headers[key] = extract(req.headers, key.toLowerCase(), sanitized, isOptional);
             if (data.headers[key] === 'extract_error') errors.push('headers_missing_' + key);
             break;
         case srcTypes.QUERY:
