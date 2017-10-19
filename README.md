@@ -170,3 +170,7 @@ var authFunction = function(headers, callback) {
 #### disableRegex
 Set to true if you trust yourself and like to save
 computation time through disabling regex check of each key.
+
+## License
+This code available under the MIT License.
+See License.md for details.
