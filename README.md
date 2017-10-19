@@ -76,24 +76,22 @@ Use i.e. in express route endpoints:
 ```js
 router.get('/foo', function(req, res, next) {
     var data = parser.parseSync(req, ['Bid']);
-    parser.parse(req, ['Bid'], function(err, data) {
-        if(data.error){
-            /*
-            if an error occures and data.error === 'parser_error',
-            then data.errors is an array with more detailed errors like i.e.:
-            data.errors = ['body_missing_id']
-            */
-        } else{
-            /*
-            if everything is okay, the data object should lok like:
-            data = {
-                body: {
-                    id: 'theParsedId'
-                }
+    if(data.error){
+        /*
+        if an error occures and data.error === 'parser_error',
+        then data.errors is an array with more detailed errors like i.e.:
+        data.errors = ['body_missing_id']
+        */
+    } else{
+        /*
+        if everything is okay, the data object should lok like:
+        data = {
+            body: {
+                id: 'theParsedId'
             }
-            */
         }
-    });
+        */
+    }
 });
 ```
 
