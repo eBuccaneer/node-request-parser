@@ -4,11 +4,11 @@
 The module node-request-parser represents a parser for requests in node and express.
 This parser is able to extract properties from the request object, sanitize them with
 a given sanitizer function and return proper errors if the properties you expect are missing.
-Additionally you can pass a authorization function that the parser uses to extract i.e.
+Additionally you can pass an authorization function that the parser uses to extract i.e.
 a header property and map it to a user object. And all this is done with one single call!
 
 ## Install
-(not yet possible) Use NPM to install node-request-parser and add dependency to package.json:
+Use NPM to install node-request-parser and add dependency to package.json:
 ```bash
 $ npm install --save node-request-parser
 ```
@@ -30,7 +30,7 @@ Let me explain it with an example:
 
 This key means, you want a property from `request.body` that is named `id`, you want it to be
 sanitized using your specified sanitizer function and you say it is optional, so no error is
-returned if the property is missing given.
+returned if the property is missing.
 
 So keys can be as follows:
 * Starting with one of the following characters:
@@ -59,7 +59,7 @@ router.get('/foo', function(req, res, next) {
             */
         } else{
             /*
-            if everything is okay, the data object should lok like:
+            if everything is okay, the data object should look like:
             data = {
                 body: {
                     id: 'theParsedId'
@@ -84,7 +84,7 @@ router.get('/foo', function(req, res, next) {
         */
     } else{
         /*
-        if everything is okay, the data object should lok like:
+        if everything is okay, the data object should look like:
         data = {
             body: {
                 id: 'theParsedId'
@@ -129,13 +129,13 @@ var options = {
 ```
 
 #### alwaysParse
-Put all key in that you want to have parsed every time you use the parser.
+Put all keys in that you want to have parsed every time you use the parser.
 ```js
 var alwaysParse = ['B*id', 'H*language'];
 ```
 
 #### excludeSanitizeTypes
-Put all js types you want to generally exclude from sanitizing.
+Put in all js types you want to generally exclude from sanitizing.
 The types `boolean` and `number` are excluded by default if
 you don't specify different. This is because most sanitizers
 are only able to sanitize strings and passed numbers or
@@ -145,7 +145,7 @@ var excludeSanitizeTypes = ['boolean', 'number'];
 ```
 
 #### sanitizeFunction
-Put all key in that you want to have parsed every time you use the parser.
+Put all keys in that you want to have parsed every time you use the parser.
 ```js
 var sanitizeFunction = function(propertyToSanitize) {
     return sanitizer.sanitize(propertyToSanitize);
