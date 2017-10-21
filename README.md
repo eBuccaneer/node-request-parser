@@ -145,7 +145,7 @@ var excludeSanitizeTypes = ['boolean', 'number'];
 ```
 
 #### sanitizeFunction
-Put all keys in that you want to have parsed every time you use the parser.
+A possibility to automatically sanitize parsed properties.
 ```js
 var sanitizeFunction = function(propertyToSanitize) {
     return sanitizer.sanitize(propertyToSanitize);
